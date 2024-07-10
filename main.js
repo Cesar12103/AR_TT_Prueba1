@@ -360,6 +360,8 @@
 // init()
 
 
+// Agregar selección de Camaras
+
 let APP_ID = "dcdd57c3fdc44663a85177d1784951ed";
 
 let token = null;
