@@ -359,8 +359,7 @@
 
 // init()
 
-
-// Agregar selección de Camaras
+// Agregar cambio de camara 
 
 let APP_ID = "dcdd57c3fdc44663a85177d1784951ed";
 
@@ -410,8 +409,7 @@ let init = async () => {
 
     client.on('MessageFromPeer', handleMessageFromPeer);
 
-    localStream = await navigator.mediaDevices.getUserMedia(constraints);
-    document.getElementById('user-1').srcObject = localStream;
+    await getCameras();
 };
 
 let handleUserLeft = (MemberId) => {
@@ -528,12 +526,44 @@ let toggleMic = async () => {
     }
 };
 
+let getCameras = async () => {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+    const cameraSelect = document.getElementById('camera-select');
+    videoDevices.forEach((device, index) => {
+        const option = document.createElement('option');
+        option.value = device.deviceId;
+        option.text = device.label || `Camera ${index + 1}`;
+        cameraSelect.appendChild(option);
+    });
+
+    cameraSelect.addEventListener('change', async () => {
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+        }
+        const selectedDeviceId = cameraSelect.value;
+        localStream = await navigator.mediaDevices.getUserMedia({
+            video: { deviceId: { exact: selectedDeviceId } },
+            audio: constraints.audio
+        });
+        document.getElementById('user-1').srcObject = localStream;
+    });
+
+    // Automatically select the first camera if available
+    if (videoDevices.length > 0) {
+        cameraSelect.value = videoDevices[0].deviceId;
+        const event = new Event('change');
+        cameraSelect.dispatchEvent(event);
+    }
+};
+
 window.addEventListener('beforeunload', leaveChannel);
 
 document.addEventListener('DOMContentLoaded', (event) => {
-   
     document.getElementById('camera-btn').addEventListener('click', toggleCamera);
     document.getElementById('mic-btn').addEventListener('click', toggleMic);
-    
+
     init();
 });
+
